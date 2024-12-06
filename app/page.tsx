@@ -1,6 +1,14 @@
 "use client";
+
 import Textbox from "@/components/text-box";
 import { useState } from "react";
+import { toast } from "sonner";
+
+interface Line {
+  line1: string;
+  line2: string;
+  isDifferent: boolean;
+}
 
 export default function Home() {
   const [json1, setJson1] = useState<string>("");
@@ -8,53 +16,69 @@ export default function Home() {
   const [comparisonResult, setComparisonResult] = useState<Line[]>([]);
   const [showResults, setShowResults] = useState<boolean>(false);
 
-  // Converts string to object
   const parseJSON = (jsonString: string) => {
     try {
-      return JSON.parse(jsonString);
+      const jsonObjects = jsonString.match(/\{[^{}]*(?:\{[^{}]*\})*[^{}]*\}/g);
+
+      if (!jsonObjects) {
+        throw new Error("No valid JSON objects found");
+      }
+
+      return jsonObjects.map((obj) => JSON.parse(obj));
     } catch (e) {
-      return null;
+      throw new Error(`Parse error: ${e.message}`);
     }
   };
 
-  // This function will format the JSON
-  const prettifyJSON = (obj: object) => {
+  const prettifyJSON = (obj: any | any[]) => {
     if (!obj) return "";
     return JSON.stringify(obj, null, 2);
   };
 
-  // Compares the json strings line by line
   const compareJSON = (str1: string, str2: string) => {
-    const obj1 = parseJSON(str1);
-    const obj2 = parseJSON(str2);
+    try {
+      const obj1 = parseJSON(str1);
+      const obj2 = parseJSON(str2);
 
-    if (!obj1 || !obj2) {
-      return [];
+      const merged1 = Array.isArray(obj1) ? Object.assign({}, ...obj1) : obj1;
+      const merged2 = Array.isArray(obj2) ? Object.assign({}, ...obj2) : obj2;
+
+      const lines1 = prettifyJSON(merged1).split("\n");
+      const lines2 = prettifyJSON(merged2).split("\n");
+
+      const maxLines = Math.max(lines1.length, lines2.length);
+      const result: Line[] = [];
+
+      for (let i = 0; i < maxLines; i++) {
+        const line1 = lines1[i] || "";
+        const line2 = lines2[i] || "";
+        result.push({
+          line1,
+          line2,
+          isDifferent: line1 !== line2,
+        });
+      }
+
+      return result;
+    } catch (error) {
+      throw new Error(`Comparison failed: ${error.message}`);
     }
-
-    const lines1 = prettifyJSON(obj1).split("\n");
-    const lines2 = prettifyJSON(obj2).split("\n");
-
-    const result = [];
-    const maxLines = Math.max(lines1.length, lines2.length);
-
-    for (let i = 0; i < maxLines; i++) {
-      const line1 = lines1[i] || "";
-      const line2 = lines2[i] || "";
-      result.push({
-        line1,
-        line2,
-        isDifferent: line1 !== line2,
-      });
-    }
-
-    return result;
   };
 
   const handleCompare = () => {
-    const result = compareJSON(json1, json2);
-    setComparisonResult(result);
-    setShowResults(true);
+    try {
+      if (!json1.trim() || !json2.trim()) {
+        throw new Error("Please provide both JSON inputs");
+      }
+
+      const result = compareJSON(json1, json2);
+      setComparisonResult(result);
+      setShowResults(true);
+    } catch (error: error) {
+      toast(error.message);
+      setShowResults(false);
+      setComparisonResult([]);
+    }
   };
 
   const handleReset = () => {
@@ -64,7 +88,7 @@ export default function Home() {
     setComparisonResult([]);
   };
 
-  if (showResults) {
+  if (showResults && comparisonResult.length > 0) {
     return (
       <main className="h-screen p-8 space-y-8">
         <div className="flex justify-between items-center">
@@ -81,7 +105,7 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <h3 className="font-medium">First JSON</h3>
-            <div className="font-mono text-sm whitespace-pre border rounded p-4">
+            <div className="font-mono text-sm whitespace-pre border rounded p-4 overflow-auto max-h-[80vh]">
               {comparisonResult.map((line, idx) => (
                 <div
                   key={`left-${idx}`}
@@ -96,7 +120,7 @@ export default function Home() {
           </div>
           <div className="space-y-1">
             <h3 className="font-medium">Second JSON</h3>
-            <div className="font-mono text-sm whitespace-pre border rounded p-4">
+            <div className="font-mono text-sm whitespace-pre border rounded p-4 overflow-auto max-h-[80vh]">
               {comparisonResult.map((line, idx) => (
                 <div
                   key={`right-${idx}`}
