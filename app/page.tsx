@@ -26,16 +26,19 @@ export default function Home() {
 
       return jsonObjects.map((obj) => JSON.parse(obj));
     } catch (e) {
-      throw new Error(`Parse error: ${e.message}`);
+      if (e instanceof Error) {
+        throw new Error(`Parse error: ${e.message}`);
+      }
+      throw new Error("Parse error: Unknown error occurred");
     }
   };
 
-  const prettifyJSON = (obj: any | any[]) => {
+  const prettifyJSON = (obj: unknown): string => {
     if (!obj) return "";
     return JSON.stringify(obj, null, 2);
   };
 
-  const compareJSON = (str1: string, str2: string) => {
+  const compareJSON = (str1: string, str2: string): Line[] => {
     try {
       const obj1 = parseJSON(str1);
       const obj2 = parseJSON(str2);
@@ -61,7 +64,10 @@ export default function Home() {
 
       return result;
     } catch (error) {
-      throw new Error(`Comparison failed: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Comparison failed: ${error.message}`);
+      }
+      throw new Error("Comparison failed: Unknown error occurred");
     }
   };
 
@@ -74,8 +80,12 @@ export default function Home() {
       const result = compareJSON(json1, json2);
       setComparisonResult(result);
       setShowResults(true);
-    } catch (error: error) {
-      toast(error.message);
+    } catch (error) {
+      if (error instanceof Error) {
+        toast(error.message);
+      } else {
+        toast("An unknown error occurred");
+      }
       setShowResults(false);
       setComparisonResult([]);
     }
