@@ -16,6 +16,7 @@ export default function Home() {
   const [comparisonResult, setComparisonResult] = useState<Line[]>([]);
   const [showResults, setShowResults] = useState<boolean>(false);
 
+  // Used AI to clean up JSONS
   const cleanJSONString = (jsonString: string): string => {
     let cleaned = jsonString.trim();
     if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
@@ -25,6 +26,7 @@ export default function Home() {
     return cleaned;
   };
 
+  // Used AI to create this funciton -> It converts string to JSON
   const parseJSON = (jsonString: string) => {
     try {
       const jsonObjects = jsonString.match(/\{[^{}]*(?:\{[^{}]*\})*[^{}]*\}/g);
@@ -43,11 +45,13 @@ export default function Home() {
     }
   };
 
+  // Formats JSON code to look clean
   const prettifyJSON = (objs: unknown[]): string => {
     if (!objs || !objs.length) return "";
     return objs.map((obj) => JSON.stringify(obj, null, 2)).join("\n\n");
   };
 
+  // Creates a new array for each line of JSON, array contains line1, lin2 and if they are equal or not.
   const compareJSON = (str1: string, str2: string): Line[] => {
     try {
       const obj1 = parseJSON(str1);
@@ -107,7 +111,7 @@ export default function Home() {
 
   if (showResults && comparisonResult.length > 0) {
     return (
-      <main className="h-screen p-8 space-y-8">
+      <main className="p-12 h-screen max-h-screen space-y-8">
         <div className="flex justify-between items-center">
           <p className="text-3xl font-bold">
             JSON Difference Finder Project for BTM
@@ -122,7 +126,7 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <h3 className="font-medium">First JSON</h3>
-            <div className="font-mono text-sm whitespace-pre border rounded p-4 overflow-auto max-h-[80vh]">
+            <div className="font-mono text-sm whitespace-pre border rounded overflow-auto max-h-[50vh]">
               {comparisonResult.map((line, idx) => (
                 <div
                   key={`left-${idx}`}
@@ -137,7 +141,7 @@ export default function Home() {
           </div>
           <div className="space-y-1">
             <h3 className="font-medium">Second JSON</h3>
-            <div className="font-mono text-sm whitespace-pre border rounded p-4 overflow-auto max-h-[80vh]">
+            <div className="font-mono text-sm whitespace-pre border rounded overflow-auto max-h-[50vh]">
               {comparisonResult.map((line, idx) => (
                 <div
                   key={`right-${idx}`}
@@ -156,7 +160,7 @@ export default function Home() {
   }
 
   return (
-    <main className="h-screen p-8 space-y-8">
+    <main className="h-screen max-h-screen p-8 space-y-8">
       <div className="">
         <p className="text-3xl font-bold">
           JSON Difference Finder Project for BTM
