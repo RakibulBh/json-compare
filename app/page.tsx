@@ -16,15 +16,27 @@ export default function Home() {
   const [comparisonResult, setComparisonResult] = useState<Line[]>([]);
   const [showResults, setShowResults] = useState<boolean>(false);
 
+  // Used AI to clean up JSONS
+  const cleanJSONString = (jsonString: string): string => {
+    let cleaned = jsonString.trim();
+    if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+      cleaned = cleaned.slice(1, -1);
+    }
+    cleaned = cleaned.replace(/""/g, '"');
+    return cleaned;
+  };
+
+  // Used AI to create this funciton -> It converts string to JSON
   const parseJSON = (jsonString: string) => {
     try {
       const jsonObjects = jsonString.match(/\{[^{}]*(?:\{[^{}]*\})*[^{}]*\}/g);
-
       if (!jsonObjects) {
         throw new Error("No valid JSON objects found");
       }
-
-      return jsonObjects.map((obj) => JSON.parse(obj));
+      return jsonObjects.map((obj) => {
+        const cleanedObj = cleanJSONString(obj);
+        return JSON.parse(cleanedObj);
+      });
     } catch (e) {
       if (e instanceof Error) {
         throw new Error(`Parse error: ${e.message}`);
@@ -33,21 +45,20 @@ export default function Home() {
     }
   };
 
-  const prettifyJSON = (obj: unknown): string => {
-    if (!obj) return "";
-    return JSON.stringify(obj, null, 2);
+  // Formats JSON code to look clean
+  const prettifyJSON = (objs: unknown[]): string => {
+    if (!objs || !objs.length) return "";
+    return objs.map((obj) => JSON.stringify(obj, null, 2)).join("\n\n");
   };
 
+  // Creates a new array for each line of JSON, array contains line1, lin2 and if they are equal or not.
   const compareJSON = (str1: string, str2: string): Line[] => {
     try {
       const obj1 = parseJSON(str1);
       const obj2 = parseJSON(str2);
 
-      const merged1 = Array.isArray(obj1) ? Object.assign({}, ...obj1) : obj1;
-      const merged2 = Array.isArray(obj2) ? Object.assign({}, ...obj2) : obj2;
-
-      const lines1 = prettifyJSON(merged1).split("\n");
-      const lines2 = prettifyJSON(merged2).split("\n");
+      const lines1 = prettifyJSON(obj1).split("\n");
+      const lines2 = prettifyJSON(obj2).split("\n");
 
       const maxLines = Math.max(lines1.length, lines2.length);
       const result: Line[] = [];
@@ -100,7 +111,7 @@ export default function Home() {
 
   if (showResults && comparisonResult.length > 0) {
     return (
-      <main className="h-screen p-8 space-y-8">
+      <main className="p-12 h-screen max-h-screen space-y-8">
         <div className="flex justify-between items-center">
           <p className="text-3xl font-bold">
             JSON Difference Finder Project for BTM
@@ -115,7 +126,7 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <h3 className="font-medium">First JSON</h3>
-            <div className="font-mono text-sm whitespace-pre border rounded p-4 overflow-auto max-h-[80vh]">
+            <div className="font-mono text-sm whitespace-pre border rounded overflow-auto max-h-[50vh]">
               {comparisonResult.map((line, idx) => (
                 <div
                   key={`left-${idx}`}
@@ -130,7 +141,7 @@ export default function Home() {
           </div>
           <div className="space-y-1">
             <h3 className="font-medium">Second JSON</h3>
-            <div className="font-mono text-sm whitespace-pre border rounded p-4 overflow-auto max-h-[80vh]">
+            <div className="font-mono text-sm whitespace-pre border rounded overflow-auto max-h-[50vh]">
               {comparisonResult.map((line, idx) => (
                 <div
                   key={`right-${idx}`}
@@ -149,7 +160,7 @@ export default function Home() {
   }
 
   return (
-    <main className="h-screen p-8 space-y-8">
+    <main className="h-screen max-h-screen p-8 space-y-8">
       <div className="">
         <p className="text-3xl font-bold">
           JSON Difference Finder Project for BTM
