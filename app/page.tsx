@@ -16,15 +16,25 @@ export default function Home() {
   const [comparisonResult, setComparisonResult] = useState<Line[]>([]);
   const [showResults, setShowResults] = useState<boolean>(false);
 
+  const cleanJSONString = (jsonString: string): string => {
+    let cleaned = jsonString.trim();
+    if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+      cleaned = cleaned.slice(1, -1);
+    }
+    cleaned = cleaned.replace(/""/g, '"');
+    return cleaned;
+  };
+
   const parseJSON = (jsonString: string) => {
     try {
       const jsonObjects = jsonString.match(/\{[^{}]*(?:\{[^{}]*\})*[^{}]*\}/g);
-
       if (!jsonObjects) {
         throw new Error("No valid JSON objects found");
       }
-
-      return jsonObjects.map((obj) => JSON.parse(obj));
+      return jsonObjects.map((obj) => {
+        const cleanedObj = cleanJSONString(obj);
+        return JSON.parse(cleanedObj);
+      });
     } catch (e) {
       if (e instanceof Error) {
         throw new Error(`Parse error: ${e.message}`);
@@ -33,9 +43,9 @@ export default function Home() {
     }
   };
 
-  const prettifyJSON = (obj: unknown): string => {
-    if (!obj) return "";
-    return JSON.stringify(obj, null, 2);
+  const prettifyJSON = (objs: unknown[]): string => {
+    if (!objs || !objs.length) return "";
+    return objs.map((obj) => JSON.stringify(obj, null, 2)).join("\n\n");
   };
 
   const compareJSON = (str1: string, str2: string): Line[] => {
@@ -43,11 +53,8 @@ export default function Home() {
       const obj1 = parseJSON(str1);
       const obj2 = parseJSON(str2);
 
-      const merged1 = Array.isArray(obj1) ? Object.assign({}, ...obj1) : obj1;
-      const merged2 = Array.isArray(obj2) ? Object.assign({}, ...obj2) : obj2;
-
-      const lines1 = prettifyJSON(merged1).split("\n");
-      const lines2 = prettifyJSON(merged2).split("\n");
+      const lines1 = prettifyJSON(obj1).split("\n");
+      const lines2 = prettifyJSON(obj2).split("\n");
 
       const maxLines = Math.max(lines1.length, lines2.length);
       const result: Line[] = [];
